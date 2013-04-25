@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<!--
+   Copyright 2013 Brandon Wirick
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<html>
+<head>
+    <title>Puzzle Game</title>
+    <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js'></script>
+    <script type='text/javascript'>
+        var
+                BLOCK_HEIGHT = 48,
+                DEFAULT_COLOR_COUNT = 5,
+                DEFAULT_COLUMN_COUNT = 6,
+                DEFAULT_INITIAL_WELL_HEIGHT = 7,
+                DEFAULT_MIN_TO_CLEAR = 3,
+                DEFAULT_ROW_COUNT = 12,
+                MASK_BREAKING = 1,
+                MASK_FALLING = 2,
+                MASK_FLIPPING = 4,
+                MASK_LEFT = 8,
+                TYPE_AIR = 1,
+                TYPE_GARBAGE = 2,
+                TYPE_NORMAL = 3;
+        $(function () {
+            var canvas, canvasContainer, colorCount, columnCount, context, height, initialWellHeight, minToClear,
+                    rowCount, well, wellContainer, width;
+            minToClear = DEFAULT_MIN_TO_CLEAR;
+            rowCount = DEFAULT_ROW_COUNT;
+            columnCount = DEFAULT_COLUMN_COUNT;
+            colorCount = DEFAULT_COLOR_COUNT;
+            initialWellHeight = DEFAULT_INITIAL_WELL_HEIGHT;
+
+            height = rowCount * BLOCK_HEIGHT;
+            width = columnCount * BLOCK_HEIGHT;
+            canvasContainer = $('<canvas>');
+            canvas = canvasContainer.get(0);
+            canvas.height = height;
+            canvas.width = width;
+            context = canvas.getContext('2d');
+            wellContainer = $('#well');
+            wellContainer.css('height', height);
+            wellContainer.css('width', width);
+            wellContainer.append(canvasContainer);
+            well = new Well();
+            well.init();
+            well.draw();
+
+            function Block(color, type) {
+                this.color = color;
+                this.type = type ? type : TYPE_NORMAL;
+                this.chainId = -1;
+                this.mask = 0;
+                this.timeRemaining = 0;
+            }
+
+            function Well() {
+                var columns;
+                columns = [];
+                return new (function () {
+                    this.draw = draw;
+                    this.init = init;
+                })();
+
+                function draw() {
+                    var block, column, i, iMax, j, jMax;
+                    context.fillStyle = 'rgba(153,153,153,.5)';
+                    context.fillRect(0, 0, width, height);
+                    context.fillStyle = 'rgba(0,0,0,1)';
+                    context.font = '20px sans-serif';
+                    context.textBaseline = 'bottom';
+
+                    for (i = 0, iMax = columnCount; i < iMax; i += 1) {
+                        column = columns[i];
+                        for (j = 0, jMax = rowCount + 2; j < iMax; j += 1) {
+                            block = column[j];
+                            context.fillText(block.color, i * BLOCK_HEIGHT, height - j * BLOCK_HEIGHT);
+                        }
+                    }
+                }
+
+                function init() {
+                    var block, column, i, iMax, j, jMax, match;
+
+                    for (i = 0, iMax = columnCount; i < iMax; i += 1) {
+                        column = [];
+                        for (j = 0, jMax = rowCount + 2; j < iMax; j += 1) {
+                            block = new Block(Math.floor(Math.random() * colorCount),
+                                    j < initialWellHeight ? TYPE_NORMAL : TYPE_AIR);
+                            adjustVertically();
+                            adjustHorizontally();
+                            column[j] = block;
+                        }
+                        columns[i] = column;
+                    }
+
+                    function adjustHorizontally() {
+                        var k, kMax;
+                        if (i >= minToClear && columns[i - 1][j].color === block.color) {
+                            match = true;
+                            for (k = 1, kMax = minToClear; match && k < kMax; k += 1) {
+                                match = columns[i - k][j].color === block.color;
+                            }
+                            if (match) {
+                                block.color += 1;
+                                if (block.color == colorCount) {
+                                    block.color = 0;
+                                }
+                                adjustVertically();
+                            }
+                        }
+                    }
+
+                    function adjustVertically() {
+                        var k, kMax;
+                        if (j >= minToClear && column[j - 1].color === block.color) {
+                            match = true;
+                            for (k = 1, kMax = minToClear; match && k < kMax; k += 1) {
+                                match = column[j - k].color === block.color;
+                            }
+                            if (match) {
+                                block.color += 1;
+                                if (block.color == colorCount) {
+                                    block.color = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+    <style type='text/css'>
+        #well {
+            border: thin solid black;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+<div id='well'></div>
+</body>
+</html>
