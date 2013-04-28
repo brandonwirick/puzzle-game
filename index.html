@@ -16,196 +16,220 @@
 -->
 <html>
 <head>
-    <title>Puzzle Game</title>
-    <script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js'></script>
-    <script type='text/javascript'>
-        var
-                BLOCK_HEIGHT = 48,//pixels per block, height and width the same
-                DEFAULT_COLOR_COUNT = 5,//how many colors of blocks
-                DEFAULT_COLUMN_COUNT = 6,//how wide the well is, in blocks
-                DEFAULT_INITIAL_WELL_HEIGHT = 7,//how many rows to fill with blocks inititally, ignoring randomization
-                DEFAULT_MIN_TO_CLEAR = 3,//three in a row... this will probably NEVER change
-                DEFAULT_ROW_COUNT = 12,//how high the well is, in blocks, ignoring invisible rows
-                INVISIBLE_ROW_COUNT = 2,//how many rows are invisible, below the well
-                MASK_BREAKING = 1,
-                MASK_FALLING = 2,
-                MASK_FLIPPING = 4,
-                MASK_LEFT = 8,
-                TYPE_AIR = 1,
-                TYPE_GARBAGE = 2,
-                TYPE_NORMAL = 3;
-        $(function () {
-            var canvas, canvasContainer, colorCount, columnCount, context, height, initialWellHeight,
-                    invisibleRowCount, minToClear, rowCount, well, wellContainer, width;
-            minToClear = DEFAULT_MIN_TO_CLEAR;
-            rowCount = DEFAULT_ROW_COUNT;
-            columnCount = DEFAULT_COLUMN_COUNT;
-            colorCount = DEFAULT_COLOR_COUNT;
-            initialWellHeight = DEFAULT_INITIAL_WELL_HEIGHT;
-            invisibleRowCount = INVISIBLE_ROW_COUNT;
+<title>Puzzle Game</title>
+<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js'></script>
+<script type='text/javascript'>
+    var
+            BLOCK_HEIGHT = 48,//pixels per block, height and width the same
+            DEFAULT_COLOR_COUNT = 5,//how many colors of blocks
+            DEFAULT_COLUMN_COUNT = 6,//how wide the well is, in blocks
+            DEFAULT_INITIAL_WELL_HEIGHT = 8,//how many rows to fill with blocks initially, ignoring randomization
+            DEFAULT_MIN_TO_CLEAR = 3,//three in a row... this will probably NEVER change
+            DEFAULT_ROW_COUNT = 12,//how high the well is, in blocks, ignoring invisible rows
+            INVISIBLE_ROW_COUNT = 2,//how many rows are invisible, below the well
+            MASK_BREAKING = 1,
+            MASK_FALLING = 2,
+            MASK_FLIPPING = 4,
+            MASK_LEFT = 8,
+            MASK_SHOCK = 16,
+            TYPE_AIR = 1,
+            TYPE_GARBAGE = 2,
+            TYPE_NORMAL = 3;
+    $(function () {
+        var canvas, canvasContainer, colorCount, columnCount, context, height, initialWellHeight,
+                invisibleRowCount, minToClear, rowCount, well, wellContainer, width;
+        minToClear = DEFAULT_MIN_TO_CLEAR;
+        rowCount = DEFAULT_ROW_COUNT;
+        columnCount = DEFAULT_COLUMN_COUNT;
+        colorCount = DEFAULT_COLOR_COUNT;
+        initialWellHeight = DEFAULT_INITIAL_WELL_HEIGHT;
+        invisibleRowCount = INVISIBLE_ROW_COUNT;
 
-            height = rowCount * BLOCK_HEIGHT;
-            width = columnCount * BLOCK_HEIGHT;
-            canvasContainer = $('<canvas>');
-            canvas = canvasContainer.get(0);
-            canvas.height = height;
-            canvas.width = width;
-            context = canvas.getContext('2d');
-            wellContainer = $('#well');
-            wellContainer.css('height', height);
-            wellContainer.css('width', width);
-            wellContainer.append(canvasContainer);
-            well = new Well();
-            well.init();
-            well.draw();
+        height = rowCount * BLOCK_HEIGHT + 1;
+        width = columnCount * BLOCK_HEIGHT + 1;
+        canvasContainer = $('<canvas>');
+        canvas = canvasContainer.get(0);
+        canvas.height = height;
+        canvas.width = width;
+        context = canvas.getContext('2d');
+        wellContainer = $('#well');
+        wellContainer.css('height', height);
+        wellContainer.css('width', width);
+        wellContainer.append(canvasContainer);
+        well = new Well();
+        well.init();
+        well.draw();
 
-            function Block(color, type) {
-                this.color = color;
-                this.type = type ? type : TYPE_NORMAL;
-                this.chain = undefined;
-                this.mask = 0;
-                this.timeRemaining = 0;
-            }
-
-            function Well() {
-                var columns;
-                columns = [];
-                return new (function () {
-                    this.draw = draw;
-                    this.init = init;
-                })();
-
-                function draw() {
-                    var block, column, i, iMax, j, jMax;
-
-                    for (i = 0, iMax = columnCount; i < iMax; i += 1) {
-                        column = columns[i];
-                        for (j = 0, jMax = rowCount; j < jMax; j += 1) {
-                            block = column[j + invisibleRowCount];
-                            if (block.color >= 0) {
-                                switch (block.color) {
-                                    case 0:
-                                        context.fillStyle = '#909';
-                                        drawOuterBlock();
-                                        context.fillStyle = '#c0c';
-                                        drawInnerBlock();
-                                        break;
-                                    case 1:
-                                        context.fillStyle = '#900';
-                                        drawOuterBlock();
-                                        context.fillStyle = '#c00';
-                                        drawInnerBlock();
-                                        break;
-                                    case 2:
-                                        context.fillStyle = '#990';
-                                        drawOuterBlock();
-                                        context.fillStyle = '#cc0';
-                                        drawInnerBlock();
-                                        break;
-                                    case 3:
-                                        context.fillStyle = '#090';
-                                        drawOuterBlock();
-                                        context.fillStyle = '#0c0';
-                                        drawInnerBlock();
-                                        break;
-                                    case 4:
-                                        context.fillStyle = '#099';
-                                        drawOuterBlock();
-                                        context.fillStyle = '#0cc';
-                                        drawInnerBlock();
-                                        break;
-                                    case 5:
-                                        context.fillStyle = '#009';
-                                        drawOuterBlock();
-                                        context.fillStyle = '#00c';
-                                        drawInnerBlock();
-                                        break;
-                                    default:
-                                        break;
-                                }
-                            }
-                        }
-                    }
-
-                    function drawInnerBlock() {
-                        context.fillRect(
-                                i * BLOCK_HEIGHT + 2,
-                                height - (j * BLOCK_HEIGHT) + 2,
-                                BLOCK_HEIGHT - 4,
-                                BLOCK_HEIGHT - 4);
-                    }
-
-                    function drawOuterBlock() {
-                        context.fillRect(
-                                i * BLOCK_HEIGHT,
-                                height - j * BLOCK_HEIGHT,
-                                BLOCK_HEIGHT,
-                                BLOCK_HEIGHT);
-                    }
-                }
-
-                function init() {
-                    var block, column, i, iMax, j, jMax, match;
-
-                    for (i = 0, iMax = columnCount; i < iMax; i += 1) {
-                        column = [];
-                        for (j = 0, jMax = rowCount + invisibleRowCount; j < jMax; j += 1) {
-                            if (j < initialWellHeight) {
-                                block = new Block(Math.floor(Math.random() * colorCount), TYPE_NORMAL)
-                                adjustVertically();
-                                adjustHorizontally();
-                            }
-                            else {
-                                block = new Block(-1, TYPE_AIR);
-                            }
-                            column[j] = block;
-                        }
-                        columns[i] = column;
-                    }
-
-                    function adjustHorizontally() {
-                        var k, kMax;
-                        if (i >= minToClear - 1 && columns[i - 1][j].color === block.color) {
-                            match = true;
-                            for (k = 1, kMax = minToClear; match && k < kMax; k += 1) {
-                                match = columns[i - k][j].color === block.color;
-                            }
-                            if (match) {
-                                block.color += 1;
-                                if (block.color == colorCount) {
-                                    block.color = 0;
-                                }
-                                adjustVertically();
-                            }
-                        }
-                    }
-
-                    function adjustVertically() {
-                        var k, kMax;
-                        if (j >= minToClear - 1 && column[j - 1].color === block.color) {
-                            match = true;
-                            for (k = 1, kMax = minToClear; match && k < kMax; k += 1) {
-                                match = column[j - k].color === block.color;
-                            }
-                            if (match) {
-                                block.color += 1;
-                                if (block.color == colorCount) {
-                                    block.color = 0;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    </script>
-    <style type='text/css'>
-        #well {
-            background: url("http://www.dragoart.com/tuts/pics/8/13943/how-to-draw-pikachu-gangnam-style.png") center;
-            border: thin solid black;
-            padding: 0;
+        function Block(color, type) {
+            this.color = color;
+            this.type = type ? type : TYPE_NORMAL;
+            this.chain = undefined;
+            this.mask = 0;
+            this.timeRemaining = 0;
         }
-    </style>
+
+        function Design(r, g, b, a, f) {
+            this.f = f;
+            this.rgbaLight = 'rgba('
+                    + (r * 255) + ','
+                    + (g * 255) + ','
+                    + (b * 255) + ','
+                    + a + ')';
+            this.rgbaDark = 'rgba('
+                    + (r * 204) + ','
+                    + (g * 204) + ','
+                    + (b * 204) + ','
+                    + a + ')';
+        }
+
+        function Well() {
+            var border, columns, designs, innerWidth, radius;
+            columns = [];
+            designs = [
+                new Design(1, 0, 1, 1, function (x, y, r) {
+                    context.moveTo(x, y + r);
+                    context.lineTo(x + r, y);
+                    context.lineTo(x + r + r, y + r);
+                    context.lineTo(x + r, y + r + r);
+                    context.lineTo(x, y + r);
+                }),
+                new Design(1, 0, 0, 1, function (x, y, r) {
+                    context.moveTo(x, y);
+                    context.lineTo(x + r, y);
+                    context.lineTo(x + r, y + r + r);
+                    context.lineTo(x + r + r, y + r + r);
+                    context.lineTo(x + r + r, y + r);
+                    context.lineTo(x, y + r);
+                    context.lineTo(x, y);
+                }),
+                new Design(1, 1, 0, 1, function (x, y, r) {
+                    context.moveTo(x, y);
+                    context.lineTo(x + r + r, y + r + r);
+                    context.lineTo(x, y + r + r);
+                    context.lineTo(x + r + r, y);
+                    context.lineTo(x, y);
+                }),
+                new Design(0, 1, 0, 1, function (x, y, r) {
+                    context.arc(x + r, y + r, r, 0, 2 * Math.PI, false);
+                }),
+                new Design(0, 1, 1, 1, function (x, y, r) {
+                    context.moveTo(x, y + r + r);
+                    context.lineTo(x + r + r, y + r + r);
+                    context.lineTo(x + r, y);
+                    context.lineTo(x, y + r + r);
+                }),
+                new Design(0, 0, 1, 1, function (x, y, r) {
+                    context.moveTo(x, y);
+                    context.lineTo(x + r + r, y);
+                    context.lineTo(x + r, y + r + r);
+                    context.lineTo(x, y);
+                }) ];
+            border = Math.round(BLOCK_HEIGHT * .1);
+            innerWidth = BLOCK_HEIGHT - border * 2;
+            radius = innerWidth / 2 - border;
+            return new (function () {
+                this.draw = draw;
+                this.init = init;
+            })();
+
+            function draw() {
+                var block, column, design , i, iMax, j, jMax, x, y;
+                context.strokeStyle = '#000';
+                context.lineWidth = 1;
+                for (i = 0, iMax = columnCount; i < iMax; i += 1) {
+                    column = columns[i];
+                    for (j = 0, jMax = rowCount; j < jMax; j += 1) {
+                        block = column[j + invisibleRowCount];
+                        x = i * BLOCK_HEIGHT + .5;
+                        y = (jMax - j - 1) * BLOCK_HEIGHT + .5;
+                        if (block.color >= 0 && block.color < designs.length) {
+                            design = designs[block.color];
+                            context.fillStyle = design.rgbaLight;
+                            context.beginPath();
+                            context.rect(x, y, BLOCK_HEIGHT, BLOCK_HEIGHT);
+                            context.fill();
+                            context.stroke();
+                            context.closePath();
+                            context.fillStyle = design.rgbaDark;
+                            context.beginPath();
+                            context.rect(x + border, y + border, innerWidth, innerWidth);
+                            context.fill();
+                            context.closePath();
+                            if (design.f) {
+                                context.fillStyle = design.rgbaLight;
+                                context.beginPath();
+                                design.f(x + border + border, y + border + border, radius);
+                                context.fill();
+                                context.closePath();
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            function init() {
+                var block, column, i, iMax, j, jMax, match;
+
+                for (i = 0, iMax = columnCount; i < iMax; i += 1) {
+                    column = [];
+                    for (j = 0, jMax = rowCount + invisibleRowCount; j < jMax; j += 1) {
+                        if (j < initialWellHeight) {
+                            block = new Block(Math.floor(Math.random() * colorCount), TYPE_NORMAL);
+                            adjustVertically();
+                            adjustHorizontally();
+                        }
+                        else {
+                            block = new Block(-1, TYPE_AIR);
+                        }
+                        column[j] = block;
+                    }
+                    columns[i] = column;
+                }
+
+                function adjustHorizontally() {
+                    var k, kMax;
+                    if (i >= minToClear - 1 && columns[i - 1][j].color === block.color) {
+                        match = true;
+                        for (k = 1, kMax = minToClear; match && k < kMax; k += 1) {
+                            match = columns[i - k][j].color === block.color;
+                        }
+                        if (match) {
+                            block.color += 1;
+                            if (block.color == colorCount) {
+                                block.color = 0;
+                            }
+                            adjustVertically();
+                        }
+                    }
+                }
+
+                function adjustVertically() {
+                    var k, kMax;
+                    if (j >= minToClear - 1 && column[j - 1].color === block.color) {
+                        match = true;
+                        for (k = 1, kMax = minToClear; match && k < kMax; k += 1) {
+                            match = column[j - k].color === block.color;
+                        }
+                        if (match) {
+                            block.color += 1;
+                            if (block.color == colorCount) {
+                                block.color = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+<style type='text/css'>
+    #well {
+        background: url("http://www.dragoart.com/tuts/pics/8/13943/how-to-draw-pikachu-gangnam-style.png") center;
+        border: thin solid black;
+        padding: 0;
+    }
+</style>
 </head>
 <body>
 <div id='well'></div>
